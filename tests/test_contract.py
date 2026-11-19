@@ -3,7 +3,8 @@ import pandas as pd
 import pytest
 from sklearn.metrics import r2_score
 
-from src.config import LAG_WARMUP, TARGET
+from src import config
+from src.config import FEATURE_INPUT_COLS, FORBIDDEN, LAG_WARMUP, TARGET
 from src.features import build_features, feature_columns, reindex_to_calendar
 from src.ingest import load_raw
 from src.train import MODELS, temporal_split
@@ -56,3 +57,18 @@ def test_persistence_baseline_is_reported():
     """The baseline that matters for a lag-driven model is 'yesterday again'.
     It must be in the comparison, whatever its score."""
     assert "baseline_persistence" in MODELS
+
+
+def test_every_raw_column_is_classified():
+    """Each column in the raw CSV must be dteday, FORBIDDEN, or a raw input
+    build_features reads (FEATURE_INPUT_COLS). A new upstream column fails
+    here until someone decides, in src/config.py, which it is.
+
+    Deliberately not checked against feature_columns(): that admits any
+    numeric non-FORBIDDEN column, so a new numeric column would pass by
+    becoming a feature -- the exact silent change this test exists to stop.
+    config.RAW is read at call time so the check can be pointed at a copy."""
+    raw_cols = set(pd.read_csv(config.RAW, nrows=0).columns)
+    classified = {"dteday"} | FORBIDDEN | FEATURE_INPUT_COLS
+    unclassified = raw_cols - classified
+    assert not unclassified, f"unclassified raw columns: {sorted(unclassified)}"

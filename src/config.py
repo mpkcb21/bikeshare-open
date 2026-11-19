@@ -42,8 +42,25 @@ TIME_INDEX_COLS = {"instant", "yr", "days_since_2011"}
 #    build our own lags from the target and test those instead.
 UNVERIFIED_COLS = {"cnt_2d_bfr"}
 
+# 4. Redundant: string labels restating calendar facts that build_features
+#    derives from dteday itself (month_sin/cos, dayofweek). Not leakage; we
+#    simply do not read them, and listing them here means a new raw column
+#    cannot slip in unclassified (tests/test_contract.py).
+REDUNDANT_COLS = {"season", "mnth", "weekday"}
+
 # What feature_columns() and the tests actually enforce.
-FORBIDDEN = LEAKAGE_COLS | TIME_INDEX_COLS | UNVERIFIED_COLS
+FORBIDDEN = LEAKAGE_COLS | TIME_INDEX_COLS | UNVERIFIED_COLS | REDUNDANT_COLS
+
+# Every raw column build_features reads, whether passed through unchanged
+# (temp, hum, ...) or transformed (holiday -> is_holiday, weather ->
+# weather_severity). This is a raw-column allowlist, not the feature list:
+# feature_columns() still derives that from FORBIDDEN. It must be explicit
+# because feature_columns() admits any numeric non-FORBIDDEN column, so a new
+# numeric upstream column would otherwise classify itself as a "feature".
+FEATURE_INPUT_COLS = {
+    "temp", "atemp", "hum", "windspeed",
+    "holiday", "workday", "weather",
+}
 
 # Temporal split: train on 2011, validate on H1 2012, test on H2 2012.
 TRAIN_END = "2011-12-31"
