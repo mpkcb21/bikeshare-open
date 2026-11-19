@@ -39,3 +39,14 @@ rides) from calendar, weather, and lagged-demand features.
   cannot extrapolate to 2012. That is the headline result, not an error.
 - 2012-10-29 (Hurricane Sandy, 22 rides) is in the test set. Expect it in
   any residual plot.
+
+## Skills and guards
+- `/new-feature <idea>` adds a feature with its leakage test first.
+- `/seed-fault <description>` breaks `src/` on purpose to check the tests and
+  hook catch it, then restores it and logs it. Never use it on unfinished work.
+- `data/raw/bike_daily.csv` is hash-checked in `load_raw()`
+  (`EXPECTED_RAW_SHA256_PREFIX` in `src/config.py`). Never edit it.
+- Edit files with the Edit tool, never Bash/sed: the leakage hook only watches
+  Edit and Write.
+- A new raw column must be classified in `src/config.py` (`FORBIDDEN` or
+  `FEATURE_INPUT_COLS`), or `tests/test_contract.py` fails.
