@@ -41,7 +41,6 @@ rides) from calendar, weather, and lagged-demand features.
   any residual plot.
 
 ## Skills and guards
-- `/new-feature <idea>` adds a feature with its leakage test first.
 - `/seed-fault <description>` breaks `src/` on purpose to check the tests and
   hook catch it, then restores it and logs it. Never use it on unfinished work.
 - `data/raw/bike_daily.csv` is hash-checked in `load_raw()`
