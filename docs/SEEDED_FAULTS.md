@@ -844,3 +844,37 @@ ERROR tests/test_split.py::test_no_overlapping_dates - AssertionError: raw da...
 ```
 
 After git checkout the hash is a6bed1577f6e4de5 again, and make test shows 18 passed.
+
+## Fault 5: .shift(1) deleted from cnt_roll_7 (re-run via /seed-fault)
+
+Same fault as Fault 2, re-run through the `/seed-fault` skill from a clean
+tree (18 passed before seeding).
+
+**Diff** (`git diff -- src/`):
+
+```diff
+--- a/src/features.py
++++ b/src/features.py
+@@ -75,7 +75,7 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
+     out["cnt_lag_1"] = out[TARGET].shift(1)
+     out["cnt_lag_7"] = out[TARGET].shift(LAG_WARMUP)
+-    out["cnt_roll_7"] = out[TARGET].shift(1).rolling(LAG_WARMUP).mean()
++    out["cnt_roll_7"] = out[TARGET].rolling(LAG_WARMUP).mean()
+```
+
+**Failing test:** `tests/test_leakage.py::test_rolling_mean_excludes_today`
+(1 failed, 17 passed).
+
+```
+>           assert feats.set_index("dteday").cnt_roll_7[date] == pytest.approx(expected)
+E           assert np.float64(4389.0) == 4414.857142857143 ± 0.00441486
+```
+
+**Hook result:** the PostToolUse hook fired immediately after the Edit and
+returned a blocking error: "Leakage tests failed after editing
+.../src/features.py", with the same failing test and assertion as above.
+
+**Restore:** 1 Edit action to put `.shift(1)` back, plus 1 Bash call to
+verify (`make test`: 18 passed; `git diff -- src/`: empty).
+
+Note on Fault 5: this entry was produced by my own `/seed-fault` skill (.claude/skills/seed-fault/SKILL.md), not by hand. It repeats Fault 2 on purpose to show the skill works end to end. The skill first refused to run because my working tree had uncommitted changes, as written, and ran only after I committed.
