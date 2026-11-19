@@ -79,6 +79,25 @@ def test_every_raw_column_is_classified():
     assert not unclassified, f"unclassified raw columns: {sorted(unclassified)}"
 
 
+def test_load_raw_rejects_modified_csv(tmp_path, monkeypatch):
+    """A single changed value in the raw CSV must fail the sha256 check,
+    before any parsing -- even when the file is still a valid, plausible CSV."""
+    original = config.RAW.read_text()
+    lines = original.splitlines(keepends=True)
+    header = [h.strip('"') for h in lines[0].rstrip("\n").split(",")]
+    cnt_idx = header.index("cnt")
+    fields = lines[1].rstrip("\n").split(",")
+    fields[cnt_idx] = str(int(fields[cnt_idx]) + 1)
+    lines[1] = ",".join(fields) + "\n"
+    modified = tmp_path / "bike_daily.csv"
+    modified.write_text("".join(lines))
+    assert modified.read_text() != original
+
+    monkeypatch.setattr(config, "RAW", modified)
+    with pytest.raises(AssertionError, match="raw data hash mismatch"):
+        load_raw()
+
+
 def test_encode_weather_rejects_unknown_labels():
     """An unmapped label must raise, not become a NaN that dropna() eats."""
     with pytest.raises(ValueError):

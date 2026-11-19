@@ -20,6 +20,13 @@ DATA_URL = (
     "interpretable-ml-book/master/data/bike.csv"
 )
 
+# First 16 hex chars of the sha256 of the committed raw CSV. load_raw()
+# refuses any file that does not match, so an edit to data/raw/bike_daily.csv
+# (by hand, by a tool, or by a changed upstream mirror) fails `make data` and
+# every test that loads the raw data. Change this only after deciding, on
+# purpose, that the new file is the one we want.
+EXPECTED_RAW_SHA256_PREFIX = "a6bed1577f6e4de5"
+
 TARGET = "cnt"
 
 # --- Three reasons a column is kept out of the feature set --------------
