@@ -17,6 +17,8 @@ Split by date: train 2011 (348 days), validation H1 2012 (182), test H2 2012 (18
 
 Negative R² and losing to the baseline are different things here. Gradient boosting is negative on test and still beats the mean baseline comfortably (-0.5867 vs -2.1441). Ridge is positive but only narrowly beats persistence on R² (0.5835 vs 0.5099) and loses to it on MAE (946.6 vs 840.1).
 
+Audit: `python agent/audit.py . --out reports/audit.jsonl` (run with `AUDIT_MODEL=sonnet`) flagged 0 of 1 repos: leakage none, temporal_ok true, baseline_reported true, reproducible true, confidence high. Its two findings are notes, not violations (only hgb sets a `random_state`, and a confirmation that lags use a gap-free calendar with `shift(1)` before rolling), and neither changes a number.
+
 ## Headline finding
 
 A model given `casual` and `registered` scores test R² = 1.000000, which is the signature of leakage: `casual + registered == cnt` on every row (least-squares residual 8.56e-12), so the model only learns addition. With those columns excluded and a split by date, the mean baseline scores test R² -2.1441 because ridership grew about 65% from 2011 to 2012. Persistence ("yesterday again") scores 0.5099 (MAE 840.1), ridge 0.5835 (MAE 946.6), and gradient boosting -0.5867 (MAE 2034.4): ridge is only about 0.07 R² ahead of persistence and behind it on MAE, and gradient boosting fails because a tree cannot predict above the largest value it saw in training (the 2011 maximum, 6,043 rides) while more than half of the test days are above it. My feature `hum_x_temp` moved validation R² by +0.002 for ridge and -0.006 for gradient boosting, both below the 0.01 noise floor on 182 days, so I kept it in the code but do not claim it as an improvement.
