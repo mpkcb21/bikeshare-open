@@ -5,7 +5,12 @@ from sklearn.metrics import r2_score
 
 from src import config
 from src.config import FEATURE_INPUT_COLS, FORBIDDEN, LAG_WARMUP, TARGET
-from src.features import build_features, feature_columns, reindex_to_calendar
+from src.features import (
+    build_features,
+    encode_weather,
+    feature_columns,
+    reindex_to_calendar,
+)
 from src.ingest import load_raw
 from src.train import MODELS, temporal_split
 
@@ -72,3 +77,9 @@ def test_every_raw_column_is_classified():
     classified = {"dteday"} | FORBIDDEN | FEATURE_INPUT_COLS
     unclassified = raw_cols - classified
     assert not unclassified, f"unclassified raw columns: {sorted(unclassified)}"
+
+
+def test_encode_weather_rejects_unknown_labels():
+    """An unmapped label must raise, not become a NaN that dropna() eats."""
+    with pytest.raises(ValueError):
+        encode_weather(pd.Series(["GOOD", "FOGGY", "BAD"]))
