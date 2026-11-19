@@ -64,3 +64,9 @@ def test_no_missing_values(feats):
 def test_dates_are_sorted_and_unique(feats):
     assert feats.dteday.is_monotonic_increasing
     assert feats.dteday.is_unique
+
+
+def test_hum_x_temp_is_same_day_product(feats):
+    """hum_x_temp on 2011-08-06 equals hum 75.5 * temp 25.683349, by hand."""
+    row = feats.set_index("dteday").loc[pd.Timestamp("2011-08-06")]
+    assert row.hum_x_temp == pytest.approx(1939.0928495)
